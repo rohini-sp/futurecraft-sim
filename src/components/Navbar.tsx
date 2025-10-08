@@ -1,11 +1,25 @@
-import { Link, useLocation } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Sparkles, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const Navbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
   
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed out",
+      description: "You've been successfully logged out.",
+    });
+    navigate("/");
+  };
   
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-background/80 border-b border-primary/20">
@@ -25,38 +39,54 @@ const Navbar = () => {
             >
               Home
             </Link>
-            <Link 
-              to="/dashboard" 
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/dashboard") ? "text-primary" : "text-foreground/80"
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link 
-              to="/simulator" 
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/simulator") ? "text-primary" : "text-foreground/80"
-              }`}
-            >
-              Simulator
-            </Link>
-            <Link 
-              to="/profile" 
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/profile") ? "text-primary" : "text-foreground/80"
-              }`}
-            >
-              Profile
-            </Link>
+            {user && (
+              <>
+                <Link 
+                  to="/dashboard" 
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    isActive("/dashboard") ? "text-primary" : "text-foreground/80"
+                  }`}
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  to="/simulator" 
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    isActive("/simulator") ? "text-primary" : "text-foreground/80"
+                  }`}
+                >
+                  Simulator
+                </Link>
+                <Link 
+                  to="/profile" 
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    isActive("/profile") ? "text-primary" : "text-foreground/80"
+                  }`}
+                >
+                  Profile
+                </Link>
+              </>
+            )}
           </div>
           
-          <Button 
-            variant="outline" 
-            className="border-primary/50 text-primary hover:bg-primary/10 hover:glow-cyan transition-all"
-          >
-            Login
-          </Button>
+          {user ? (
+            <Button 
+              variant="outline" 
+              className="border-primary/50 text-primary hover:bg-primary/10 hover:glow-cyan transition-all"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              className="border-primary/50 text-primary hover:bg-primary/10 hover:glow-cyan transition-all"
+              onClick={() => navigate("/auth")}
+            >
+              Login
+            </Button>
+          )}
         </div>
       </div>
     </nav>
