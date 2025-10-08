@@ -14,7 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      mentor_tips: {
+        Row: {
+          created_at: string
+          id: string
+          scenario_id: string
+          tip: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scenario_id: string
+          tip: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scenario_id?: string
+          tip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentor_tips_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outcomes: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          impact: string
+          probability: string
+          scenario_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          impact: string
+          probability: string
+          scenario_id: string
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          impact?: string
+          probability?: string
+          scenario_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outcomes_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          total_scenarios: number
+          updated_at: string
+          username: string | null
+          wisdom_points: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          total_scenarios?: number
+          updated_at?: string
+          username?: string | null
+          wisdom_points?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          total_scenarios?: number
+          updated_at?: string
+          username?: string | null
+          wisdom_points?: number
+        }
+        Relationships: []
+      }
+      scenarios: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenarios_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
