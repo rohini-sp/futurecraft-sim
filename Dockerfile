@@ -1,16 +1,19 @@
 FROM node:20
 WORKDIR /app
 
-# Install dependencies
+# Ensure prod environment inside the container
+ENV NODE_ENV=production
+
+# Install dependencies deterministically
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 # Copy source and build
 COPY . .
 RUN npm run build
 
-# Expose Vite preview server port
-EXPOSE 3000
+# Expose Vite preview server port (default 4173)
+EXPOSE 4173
 
-# Run the preview server with --host so it's accessible outside the container
-CMD ["npm", "run", "preview", "--", "--host"]
+# Run the preview server bound to all interfaces on a fixed port
+CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0", "--port", "4173", "--strictPort"]
