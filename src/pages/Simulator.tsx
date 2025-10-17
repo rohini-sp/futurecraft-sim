@@ -10,54 +10,97 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, TrendingUp, TrendingDown, Lightbulb } from "lucide-react";
+import { Sparkles, TrendingUp, TrendingDown, Lightbulb, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+type Outcome = {
+  type: string;
+  title: string;
+  description: string;
+  probability: string;
+  impact: string;
+};
 
 const Simulator = () => {
   const [scenario, setScenario] = useState("");
   const [category, setCategory] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [outcomes, setOutcomes] = useState<Outcome[]>([]);
+  const [mentorTips, setMentorTips] = useState<string[]>([]);
+  const { toast } = useToast();
 
-  const handleSimulate = () => {
-    if (scenario && category) {
-      setShowResults(true);
+  const getOutcomeIcon = (type: string) => {
+    switch (type) {
+      case "optimistic":
+        return TrendingUp;
+      case "realistic":
+        return Sparkles;
+      case "cautionary":
+        return TrendingDown;
+      default:
+        return Sparkles;
     }
   };
 
-  const outcomes = [
-    {
-      title: "Optimistic Path",
-      icon: TrendingUp,
-      probability: "65%",
-      description: "You excel in your new role, quickly adapting to challenges. Within 6 months, you're leading key projects and earning recognition.",
-      impact: "High Growth",
-      color: "primary",
-    },
-    {
-      title: "Realistic Path",
-      icon: Sparkles,
-      probability: "25%",
-      description: "The transition is smooth but gradual. You face a learning curve but maintain work-life balance. Progress is steady over 12-18 months.",
-      impact: "Moderate Growth",
-      color: "secondary",
-    },
-    {
-      title: "Cautionary Path",
-      icon: TrendingDown,
-      probability: "10%",
-      description: "The new environment proves challenging. You struggle with company culture fit, leading to stress. May require additional support or pivot.",
-      impact: "Requires Adaptation",
-      color: "destructive",
-    },
-  ];
+  const getOutcomeColor = (type: string) => {
+    switch (type) {
+      case "optimistic":
+        return "primary";
+      case "realistic":
+        return "secondary";
+      case "cautionary":
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
 
-  const mentorTips = [
-    "Research the company culture thoroughly before making the leap",
-    "Network with current employees to get insider perspectives",
-    "Negotiate for a trial period or probation clause",
-    "Ensure the role aligns with your long-term career goals",
-    "Have a financial safety net for at least 6 months",
-  ];
+  const handleSimulate = async () => {
+    if (!scenario || !category) {
+      toast({
+        title: "Missing Information",
+        description: "Please provide both a scenario and category.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    setShowResults(false);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("simulate-scenario", {
+        body: {
+          title: scenario,
+          description: scenario,
+          category: category,
+        },
+      });
+
+      if (error) throw error;
+
+      setOutcomes(data.outcomes);
+      setMentorTips(data.mentorTips);
+      setShowResults(true);
+
+      toast({
+        title: "Simulation Complete! 🎉",
+        description: "Your possible outcomes have been generated.",
+      });
+    } catch (error: any) {
+      console.error("Simulation error:", error);
+      toast({
+        title: "Simulation Failed",
+        description: error.message || "Failed to generate outcomes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen pb-20">
@@ -112,69 +155,86 @@ const Simulator = () => {
 
                   <Button 
                     onClick={handleSimulate}
+                    disabled={isLoading}
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan transition-all"
                     size="lg"
                   >
-                    <Sparkles className="mr-2 h-5 w-5" />
-                    Simulate My Future
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Generating Outcomes...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-5 w-5" />
+                        Simulate My Future
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
 
               {/* Results Section */}
-              {showResults && (
+              {showResults && outcomes.length > 0 && (
                 <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h2 className="text-2xl font-bold text-foreground mb-4">Possible Outcomes</h2>
-                  {outcomes.map((outcome, index) => (
-                    <Card 
-                      key={index}
-                      className={`bg-card/50 backdrop-blur-sm border-${outcome.color}/30 hover:border-${outcome.color}/50 transition-all`}
-                    >
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <outcome.icon className={`w-8 h-8 text-${outcome.color}`} />
-                            <div>
-                              <CardTitle className="text-xl">{outcome.title}</CardTitle>
-                              <CardDescription>Probability: {outcome.probability}</CardDescription>
+                  {outcomes.map((outcome, index) => {
+                    const Icon = getOutcomeIcon(outcome.type);
+                    const color = getOutcomeColor(outcome.type);
+                    
+                    return (
+                      <Card 
+                        key={index}
+                        className={`bg-card/50 backdrop-blur-sm border-${color}/30 hover:border-${color}/50 transition-all`}
+                      >
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <Icon className={`w-8 h-8 text-${color}`} />
+                              <div>
+                                <CardTitle className="text-xl">{outcome.title}</CardTitle>
+                                <CardDescription>Probability: {outcome.probability}</CardDescription>
+                              </div>
                             </div>
+                            <span className={`text-sm font-semibold px-3 py-1 rounded-full bg-${color}/20 text-${color}`}>
+                              {outcome.impact}
+                            </span>
                           </div>
-                          <span className={`text-sm font-semibold px-3 py-1 rounded-full bg-${outcome.color}/20 text-${outcome.color}`}>
-                            {outcome.impact}
-                          </span>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-foreground/80">{outcome.description}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-foreground/80">{outcome.description}</p>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
             {/* Sidebar - AI Mentor Tips */}
-            <div className="lg:col-span-1">
-              <Card className="bg-card/50 backdrop-blur-sm border-secondary/20 sticky top-24">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Lightbulb className="w-6 h-6 text-secondary glow-violet" />
-                    <CardTitle className="text-xl">AI Mentor Tips</CardTitle>
-                  </div>
-                  <CardDescription>Key considerations for your decision</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {mentorTips.map((tip, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-foreground/80">
-                        <span className="text-secondary mt-0.5">•</span>
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
-              </Card>
-            </div>
+            {showResults && mentorTips.length > 0 && (
+              <div className="lg:col-span-1">
+                <Card className="bg-card/50 backdrop-blur-sm border-secondary/20 sticky top-24">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="w-6 h-6 text-secondary glow-violet" />
+                      <CardTitle className="text-xl">AI Mentor Tips</CardTitle>
+                    </div>
+                    <CardDescription>Key considerations for your decision</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {mentorTips.map((tip, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm text-foreground/80">
+                          <span className="text-secondary mt-0.5">•</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </div>
       </div>
