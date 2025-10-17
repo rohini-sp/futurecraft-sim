@@ -33,11 +33,11 @@ const Simulator = () => {
   const [outcomes, setOutcomes] = useState<Outcome[]>([]);
   const [mentorTips, setMentorTips] = useState<string[]>([]);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       toast({
         title: "Authentication Required",
         description: "Please log in to use the scenario simulator.",
@@ -45,7 +45,7 @@ const Simulator = () => {
       });
       navigate("/auth");
     }
-  }, [user, navigate, toast]);
+  }, [user, loading, navigate, toast]);
 
   const getOutcomeIcon = (type: string) => {
     switch (type) {
