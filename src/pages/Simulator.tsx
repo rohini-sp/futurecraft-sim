@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import { Sparkles, TrendingUp, TrendingDown, Lightbulb, Loader2 } from "lucide-r
 import Navbar from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type Outcome = {
   type: string;
@@ -31,6 +33,19 @@ const Simulator = () => {
   const [outcomes, setOutcomes] = useState<Outcome[]>([]);
   const [mentorTips, setMentorTips] = useState<string[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to use the scenario simulator.",
+        variant: "destructive",
+      });
+      navigate("/auth");
+    }
+  }, [user, navigate, toast]);
 
   const getOutcomeIcon = (type: string) => {
     switch (type) {
